@@ -4,22 +4,24 @@ import { googleLogin, googleRegister } from '../../features/auth/api/authApi'
 import { useAuthStore } from '../../store/authStore'
 import { getErrorMsg } from '../../lib/utils'
 import toast from 'react-hot-toast'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import Spinner from './Spinner'
 
 /**
- * mode="login"    → hanya login akun terdaftar, error jika belum daftar
- * mode="register" → hanya register akun baru, lalu redirect ke /complete-profile
+ * mode="login"    → hanya login akun terdaftar; jika belum daftar tampilkan link daftar
+ * mode="register" → register akun baru lalu redirect ke /complete-profile
  */
 export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google', mode = 'login' }) {
   const navigate  = useNavigate()
   const setAuth   = useAuthStore((s) => s.setAuth)
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState('')
+  const [notRegistered, setNotRegistered] = useState(false)
 
   const handleSuccess = async (tokenResponse) => {
     setLoading(true)
     setError('')
+    setNotRegistered(false)
     try {
       if (mode === 'login') {
         // ── LOGIN: hanya akun yang sudah terdaftar ──────────────────
@@ -32,14 +34,19 @@ export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google', mo
         // ── REGISTER: buat akun baru lalu lengkapi profil ───────────
         const res = await googleRegister(tokenResponse.access_token)
         const { user, accessToken, refreshToken } = res.data.data
-        // Simpan auth dulu agar halaman complete-profile bisa request authenticated
         setAuth(user, accessToken, refreshToken)
         toast.success('Akun berhasil dibuat! Lengkapi profil Anda.')
         navigate('/complete-profile')
       }
     } catch (err) {
-      const msg = getErrorMsg(err)
-      setError(msg)
+      const status = err?.response?.status
+      const msg    = getErrorMsg(err)
+      // Login Google: akun belum terdaftar → arahkan ke halaman daftar
+      if (mode === 'login' && status === 404) {
+        setNotRegistered(true)
+      } else {
+        setError(msg)
+      }
     } finally {
       setLoading(false)
     }
@@ -55,22 +62,33 @@ export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google', mo
     <div className="w-full">
       <button
         type="button"
-        onClick={() => { setError(''); googleLoginFlow() }}
+        onClick={() => { setError(''); setNotRegistered(false); googleLoginFlow() }}
         disabled={loading}
         className="w-full flex items-center justify-center gap-3 border border-stone-200 bg-white
                    rounded px-4 py-2.5 text-sm text-stone-700 font-medium
                    hover:bg-stone-50 hover:border-stone-300 transition-all duration-150
                    disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? (
-          <Spinner size={16} className="text-stone-400" />
-        ) : (
-          <GoogleIcon />
-        )}
+        {loading ? <Spinner size={16} className="text-stone-400" /> : <GoogleIcon />}
         {loading ? 'Menghubungkan...' : label}
       </button>
 
-      {/* Inline error khusus Google (mis. belum terdaftar) */}
+      {/* Akun belum terdaftar — arahkan ke register */}
+      {notRegistered && (
+        <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-md px-3.5 py-3 mt-3 text-sm">
+          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>
+            Akun Google ini belum terdaftar.{' '}
+            <Link to="/register" className="font-semibold underline hover:text-amber-900">
+              Daftar sekarang
+            </Link>
+          </span>
+        </div>
+      )}
+
+      {/* Error umum */}
       {error && (
         <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-md px-3.5 py-3 mt-3 text-sm">
           <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
