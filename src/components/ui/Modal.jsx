@@ -1,11 +1,6 @@
 import { useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
-/**
- * Modal sebagai side drawer — slide dari kanan.
- * - Tanpa backdrop gelap
- * - Konten tidak terpotong, scroll internal
- * - Tutup dengan Escape atau klik tombol X
- */
 export default function Modal({ open, onClose, title, children, size = 'md' }) {
   const handleKey = useCallback(
     (e) => {
@@ -16,54 +11,100 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
 
   useEffect(() => {
     if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener('keydown', handleKey);
+    };
   }, [open, handleKey]);
 
-  const widths = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-  };
+  if (!open) return null;
 
-  return (
-    <>
-      {/* Overlay tipis — hanya untuk menangkap klik di luar, tidak gelap */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-      )}
+  const sizes = { sm: '420px', md: '520px', lg: '640px', xl: '800px' };
 
-      {/* Drawer panel — slide dari kanan */}
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        backgroundColor: 'rgba(0,0,0,0.25)',
+      }}
+      onClick={onClose}
+    >
       <div
-        role="dialog"
-        aria-modal="true"
-        className={`
-          fixed top-0 right-0 z-50 h-full w-full ${widths[size]}
-          bg-parchment border-l border-stone-200 shadow-xl
-          flex flex-col
-          transition-transform duration-250 ease-out
-          ${open ? 'translate-x-0' : 'translate-x-full'}
-        `}
+        style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: sizes[size],
+          maxHeight: 'calc(100dvh - 32px)',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: '#fff',
+          borderRadius: '10px',
+          border: '1px solid rgba(0,0,0,0.08)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          overflow: 'hidden',
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between px-5 py-4 border-b border-stone-200 flex-shrink-0 bg-white">
-            <h2 className="font-display text-base font-medium text-ink">
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 20px',
+              borderBottom: '1px solid #f0ede8',
+              flexShrink: 0,
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: '15px',
+                fontWeight: 500,
+                fontFamily: '"Playfair Display", Georgia, serif',
+                color: '#1a1814',
+              }}
+            >
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center rounded text-stone-400
-                         hover:text-ink hover:bg-stone-100 transition-colors"
+              style={{
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: 'none',
+                background: 'transparent',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                color: '#a8a29e',
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#f5f5f4';
+                e.currentTarget.style.color = '#1a1814';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = '#a8a29e';
+              }}
               aria-label="Tutup"
             >
               <svg
-                className="w-4 h-4"
+                width="14"
+                height="14"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -79,9 +120,12 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
           </div>
         )}
 
-        {/* Scrollable body — tidak terpotong */}
-        <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
+        {/* Scrollable body */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '20px' }}>
+          {children}
+        </div>
       </div>
-    </>
+    </div>,
+    document.body,
   );
 }
