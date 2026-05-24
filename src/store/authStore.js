@@ -1,5 +1,5 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export const useAuthStore = create(
   persist(
@@ -9,8 +9,12 @@ export const useAuthStore = create(
       refreshToken: null,
       needsProfileCompletion: false,
 
-      setAuth: (user, accessToken, refreshToken, needsProfileCompletion = false) =>
-        set({ user, accessToken, refreshToken, needsProfileCompletion }),
+      setAuth: (
+        user,
+        accessToken,
+        refreshToken,
+        needsProfileCompletion = false,
+      ) => set({ user, accessToken, refreshToken, needsProfileCompletion }),
 
       setTokens: (accessToken, refreshToken) =>
         set({ accessToken, refreshToken }),
@@ -20,10 +24,15 @@ export const useAuthStore = create(
       updateUser: (partial) =>
         set((s) => ({ user: { ...s.user, ...partial } })),
 
-      clearProfileCompletion: () =>
-        set({ needsProfileCompletion: false }),
+      clearProfileCompletion: () => set({ needsProfileCompletion: false }),
 
-      logout: () => set({ user: null, accessToken: null, refreshToken: null, needsProfileCompletion: false }),
+      logout: () =>
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          needsProfileCompletion: false,
+        }),
     }),
     {
       name: 'library-auth',
@@ -33,6 +42,6 @@ export const useAuthStore = create(
         refreshToken: s.refreshToken,
         needsProfileCompletion: s.needsProfileCompletion,
       }),
-    }
-  )
-)
+    },
+  ),
+);

@@ -1,86 +1,110 @@
-import { useState } from 'react'
-import { useGoogleLogin } from '@react-oauth/google'
-import { googleLogin, googleRegister } from '../../features/auth/api/authApi'
-import { useAuthStore } from '../../store/authStore'
-import { getErrorMsg } from '../../lib/utils'
-import toast from 'react-hot-toast'
-import { useNavigate, Link } from 'react-router-dom'
-import Spinner from './Spinner'
+import { useState } from 'react';
+import { useGoogleLogin } from '@react-oauth/google';
+import { googleLogin, googleRegister } from '../../features/auth/api/authApi';
+import { useAuthStore } from '../../store/authStore';
+import { getErrorMsg } from '../../lib/utils';
+import toast from 'react-hot-toast';
+import { useNavigate, Link } from 'react-router-dom';
+import Spinner from './Spinner';
 
 /**
  * mode="login"    → hanya login akun terdaftar; jika belum daftar tampilkan link daftar
  * mode="register" → register akun baru lalu redirect ke /complete-profile
  */
-export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google', mode = 'login' }) {
-  const navigate  = useNavigate()
-  const setAuth   = useAuthStore((s) => s.setAuth)
-  const [loading, setLoading]             = useState(false)
-  const [error, setError]                 = useState('')
-  const [notRegistered, setNotRegistered] = useState(false)
+export default function GoogleAuthButton({
+  label = 'Lanjutkan dengan Google',
+  mode = 'login',
+}) {
+  const navigate = useNavigate();
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [notRegistered, setNotRegistered] = useState(false);
 
   const handleSuccess = async (tokenResponse) => {
-    setLoading(true)
-    setError('')
-    setNotRegistered(false)
+    setLoading(true);
+    setError('');
+    setNotRegistered(false);
     try {
       if (mode === 'login') {
-        const res = await googleLogin(tokenResponse.access_token)
-        const { user, accessToken, refreshToken } = res.data.data
-        setAuth(user, accessToken, refreshToken, false)
-        toast.success(`Selamat datang, ${user.name}.`)
-        navigate(user.role === 'admin' ? '/admin/dashboard' : '/dashboard')
+        const res = await googleLogin(tokenResponse.access_token);
+        const { user, accessToken, refreshToken } = res.data.data;
+        setAuth(user, accessToken, refreshToken, false);
+        toast.success(`Selamat datang, ${user.name}.`);
+        navigate(user.role === 'admin' ? '/admin/dashboard' : '/dashboard');
       } else {
-        const res = await googleRegister(tokenResponse.access_token)
-        const { user, accessToken, refreshToken } = res.data.data
+        const res = await googleRegister(tokenResponse.access_token);
+        const { user, accessToken, refreshToken } = res.data.data;
         // Set needsProfileCompletion=true SEBELUM navigate
         // agar GuestOnly tidak redirect ke /dashboard lebih dulu
-        setAuth(user, accessToken, refreshToken, true)
-        toast.success('Akun berhasil dibuat! Lengkapi profil Anda.')
-        navigate('/complete-profile', { replace: true })
+        setAuth(user, accessToken, refreshToken, true);
+        toast.success('Akun berhasil dibuat! Lengkapi profil Anda.');
+        navigate('/complete-profile', { replace: true });
       }
     } catch (err) {
-      const status = err?.response?.status
-      const msg    = getErrorMsg(err)
+      const status = err?.response?.status;
+      const msg = getErrorMsg(err);
       if (mode === 'login' && status === 404) {
-        setNotRegistered(true)
+        setNotRegistered(true);
       } else {
-        setError(msg)
+        setError(msg);
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const googleLoginFlow = useGoogleLogin({
     onSuccess: handleSuccess,
     onError: () => setError('Login Google gagal. Coba lagi.'),
     flow: 'implicit',
-  })
+  });
 
   return (
     <div className="w-full">
       <button
         type="button"
-        onClick={() => { setError(''); setNotRegistered(false); googleLoginFlow() }}
+        onClick={() => {
+          setError('');
+          setNotRegistered(false);
+          googleLoginFlow();
+        }}
         disabled={loading}
         className="w-full flex items-center justify-center gap-3 border border-stone-200 bg-white
                    rounded px-4 py-2.5 text-sm text-stone-700 font-medium
                    hover:bg-stone-50 hover:border-stone-300 transition-all duration-150
                    disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? <Spinner size={16} className="text-stone-400" /> : <GoogleIcon />}
+        {loading ? (
+          <Spinner size={16} className="text-stone-400" />
+        ) : (
+          <GoogleIcon />
+        )}
         {loading ? 'Menghubungkan...' : label}
       </button>
 
       {/* Akun belum terdaftar */}
       {notRegistered && (
         <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-md px-3.5 py-3 mt-3 text-sm">
-          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="w-4 h-4 mt-0.5 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           <span>
             Akun Google ini belum terdaftar.{' '}
-            <Link to="/register" className="font-semibold underline hover:text-amber-900">
+            <Link
+              to="/register"
+              className="font-semibold underline hover:text-amber-900"
+            >
               Daftar sekarang
             </Link>
           </span>
@@ -90,23 +114,50 @@ export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google', mo
       {/* Error umum */}
       {error && (
         <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-md px-3.5 py-3 mt-3 text-sm">
-          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="w-4 h-4 mt-0.5 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           <span>{error}</span>
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function GoogleIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+        fill="#4285F4"
+      />
+      <path
+        d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+        fill="#34A853"
+      />
+      <path
+        d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
+        fill="#EA4335"
+      />
     </svg>
-  )
+  );
 }
