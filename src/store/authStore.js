@@ -7,9 +7,10 @@ export const useAuthStore = create(
       user: null,
       accessToken: null,
       refreshToken: null,
+      needsProfileCompletion: false,
 
-      setAuth: (user, accessToken, refreshToken) =>
-        set({ user, accessToken, refreshToken }),
+      setAuth: (user, accessToken, refreshToken, needsProfileCompletion = false) =>
+        set({ user, accessToken, refreshToken, needsProfileCompletion }),
 
       setTokens: (accessToken, refreshToken) =>
         set({ accessToken, refreshToken }),
@@ -19,7 +20,10 @@ export const useAuthStore = create(
       updateUser: (partial) =>
         set((s) => ({ user: { ...s.user, ...partial } })),
 
-      logout: () => set({ user: null, accessToken: null, refreshToken: null }),
+      clearProfileCompletion: () =>
+        set({ needsProfileCompletion: false }),
+
+      logout: () => set({ user: null, accessToken: null, refreshToken: null, needsProfileCompletion: false }),
     }),
     {
       name: 'library-auth',
@@ -27,6 +31,7 @@ export const useAuthStore = create(
         user: s.user,
         accessToken: s.accessToken,
         refreshToken: s.refreshToken,
+        needsProfileCompletion: s.needsProfileCompletion,
       }),
     }
   )

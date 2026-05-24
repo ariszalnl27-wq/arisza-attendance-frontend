@@ -14,8 +14,8 @@ import Spinner from './Spinner'
 export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google', mode = 'login' }) {
   const navigate  = useNavigate()
   const setAuth   = useAuthStore((s) => s.setAuth)
-  const [loading, setLoading]         = useState(false)
-  const [error, setError]             = useState('')
+  const [loading, setLoading]             = useState(false)
+  const [error, setError]                 = useState('')
   const [notRegistered, setNotRegistered] = useState(false)
 
   const handleSuccess = async (tokenResponse) => {
@@ -24,24 +24,23 @@ export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google', mo
     setNotRegistered(false)
     try {
       if (mode === 'login') {
-        // ── LOGIN: hanya akun yang sudah terdaftar ──────────────────
         const res = await googleLogin(tokenResponse.access_token)
         const { user, accessToken, refreshToken } = res.data.data
-        setAuth(user, accessToken, refreshToken)
+        setAuth(user, accessToken, refreshToken, false)
         toast.success(`Selamat datang, ${user.name}.`)
         navigate(user.role === 'admin' ? '/admin/dashboard' : '/dashboard')
       } else {
-        // ── REGISTER: buat akun baru lalu lengkapi profil ───────────
         const res = await googleRegister(tokenResponse.access_token)
         const { user, accessToken, refreshToken } = res.data.data
-        setAuth(user, accessToken, refreshToken)
+        // Set needsProfileCompletion=true SEBELUM navigate
+        // agar GuestOnly tidak redirect ke /dashboard lebih dulu
+        setAuth(user, accessToken, refreshToken, true)
         toast.success('Akun berhasil dibuat! Lengkapi profil Anda.')
-        navigate('/complete-profile')
+        navigate('/complete-profile', { replace: true })
       }
     } catch (err) {
       const status = err?.response?.status
       const msg    = getErrorMsg(err)
-      // Login Google: akun belum terdaftar → arahkan ke halaman daftar
       if (mode === 'login' && status === 404) {
         setNotRegistered(true)
       } else {
@@ -73,7 +72,7 @@ export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google', mo
         {loading ? 'Menghubungkan...' : label}
       </button>
 
-      {/* Akun belum terdaftar — arahkan ke register */}
+      {/* Akun belum terdaftar */}
       {notRegistered && (
         <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-md px-3.5 py-3 mt-3 text-sm">
           <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

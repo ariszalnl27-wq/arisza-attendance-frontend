@@ -45,8 +45,10 @@ function RequireAdmin({ children }) {
 }
 
 function GuestOnly({ children }) {
-  const { accessToken, user } = useAuthStore()
+  const { accessToken, user, needsProfileCompletion } = useAuthStore()
   if (accessToken) {
+    // User baru register Google belum lengkapi profil — arahkan ke /complete-profile
+    if (needsProfileCompletion) return <Navigate to="/complete-profile" replace />
     return <Navigate to={user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'} replace />
   }
   return children

@@ -13,8 +13,9 @@ import Spinner from '../../../components/ui/Spinner'
  */
 export default function CompleteProfilePage() {
   const navigate    = useNavigate()
-  const user        = useAuthStore((s) => s.user)
-  const updateUser  = useAuthStore((s) => s.updateUser)
+  const user                  = useAuthStore((s) => s.user)
+  const updateUser            = useAuthStore((s) => s.updateUser)
+  const clearProfileCompletion = useAuthStore((s) => s.clearProfileCompletion)
 
   const [form, setForm] = useState({
     name:        user?.name || '',
@@ -43,6 +44,7 @@ export default function CompleteProfilePage() {
       const res     = await updateProfile(form)
       const updated = res.data.data.user
       updateUser(updated)
+      clearProfileCompletion()
       toast.success(`Profil berhasil dilengkapi. Selamat datang, ${updated.name}!`)
       navigate('/dashboard')
     } catch (err) {
