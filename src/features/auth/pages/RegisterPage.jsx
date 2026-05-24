@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { register } from '../api/authApi'
+import { register, login } from '../api/authApi'
+import { useAuthStore } from '../../../store/authStore'
 import { getErrorMsg } from '../../../lib/utils'
 import { AuthShell } from './LoginPage'
 import Spinner from '../../../components/ui/Spinner'
@@ -9,22 +10,35 @@ import GoogleAuthButton from '../../../components/ui/GoogleAuthButton'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const [form, setForm]     = useState({ name: '', email: '', phone: '', institution: '', password: '' })
+  const setAuth  = useAuthStore((s) => s.setAuth)
+  const [form, setForm]       = useState({ name: '', email: '', phone: '', institution: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [showPass, setShowPass] = useState(false)
+  const [error, setError]     = useState('')
 
-  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }))
+  const set = (k) => (e) => {
+    setError('')
+    setForm((p) => ({ ...p, [k]: e.target.value }))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (form.password.length < 8) return toast.error('Password minimal 8 karakter.')
+    setError('')
+    if (form.password.length < 8) return setError('Password minimal 8 karakter.')
     setLoading(true)
     try {
+      // 1. Daftar
       await register(form)
-      toast.success('Registrasi berhasil. Silakan masuk.')
-      navigate('/login')
+
+      // 2. Langsung login otomatis
+      const res = await login({ identifier: form.email, password: form.password })
+      const { user, accessToken, refreshToken } = res.data.data
+      setAuth(user, accessToken, refreshToken)
+
+      toast.success(`Akun berhasil dibuat. Selamat datang, ${user.name}!`)
+      navigate('/dashboard')
     } catch (err) {
-      toast.error(getErrorMsg(err))
+      setError(getErrorMsg(err))
     } finally {
       setLoading(false)
     }
@@ -45,6 +59,16 @@ export default function RegisterPage() {
           <div className="flex-1 h-px bg-stone-200" />
         </div>
 
+        {/* Inline error */}
+        {error && (
+          <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-md px-3.5 py-3 mb-4 text-sm">
+            <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{error}</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
           <div className="form-group">
             <label className="label">Nama Lengkap</label>
@@ -57,7 +81,7 @@ export default function RegisterPage() {
             </div>
             <div className="form-group">
               <label className="label">No. Telepon</label>
-              <input className="input" placeholder="08123456789" value={form.phone} onChange={set('phone')} />
+              <input className="input" placeholder="08123456789" value={form.phone} onChange={set('phone')} inputMode="tel" />
             </div>
           </div>
           <div className="form-group">
@@ -86,7 +110,7 @@ export default function RegisterPage() {
           </div>
           <button type="submit" className="btn btn-primary btn-lg mt-1 w-full" disabled={loading}>
             {loading && <Spinner size={15} />}
-            Buat Akun
+            {loading ? 'Membuat akun...' : 'Buat Akun'}
           </button>
         </form>
 

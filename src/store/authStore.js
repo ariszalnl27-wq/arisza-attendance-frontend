@@ -16,6 +16,9 @@ export const useAuthStore = create(
 
       setUser: (user) => set({ user }),
 
+      updateUser: (partial) =>
+        set((s) => ({ user: { ...s.user, ...partial } })),
+
       logout: () => set({ user: null, accessToken: null, refreshToken: null }),
     }),
     {

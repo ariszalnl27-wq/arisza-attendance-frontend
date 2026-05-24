@@ -1,25 +1,38 @@
+import { useState } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
 import { googleAuth } from '../../features/auth/api/authApi'
 import { useAuthStore } from '../../store/authStore'
 import { getErrorMsg } from '../../lib/utils'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
 import Spinner from './Spinner'
+import CompleteProfileModal from './CompleteProfileModal'
 
 export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google' }) {
   const navigate  = useNavigate()
   const setAuth   = useAuthStore((s) => s.setAuth)
   const [loading, setLoading] = useState(false)
 
+  // State untuk modal complete profile (user baru via Google)
+  const [pendingData, setPendingData] = useState(null)
+  // pendingData = { user, accessToken, refreshToken }
+
   const handleSuccess = async (tokenResponse) => {
     setLoading(true)
     try {
       const res = await googleAuth(tokenResponse.access_token)
-      const { user, accessToken, refreshToken } = res.data.data
-      setAuth(user, accessToken, refreshToken)
-      toast.success(`Selamat datang, ${user.name}.`)
-      navigate(user.role === 'admin' ? '/admin/dashboard' : '/dashboard')
+      const { user, accessToken, refreshToken, isNewUser } = res.data.data
+
+      if (isNewUser) {
+        // Simpan token dulu di store agar updateProfile bisa request authenticated
+        setAuth(user, accessToken, refreshToken)
+        // Tampilkan modal kelengkapan profil
+        setPendingData({ user, accessToken, refreshToken })
+      } else {
+        setAuth(user, accessToken, refreshToken)
+        toast.success(`Selamat datang, ${user.name}.`)
+        navigate(user.role === 'admin' ? '/admin/dashboard' : '/dashboard')
+      }
     } catch (err) {
       toast.error(getErrorMsg(err))
     } finally {
@@ -27,29 +40,45 @@ export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google' }) 
     }
   }
 
-  const login = useGoogleLogin({
+  const handleProfileComplete = (updatedUser) => {
+    setPendingData(null)
+    toast.success(`Selamat datang, ${updatedUser.name}! Akun berhasil dibuat.`)
+    navigate('/dashboard')
+  }
+
+  const googleLogin = useGoogleLogin({
     onSuccess: handleSuccess,
     onError: () => toast.error('Login Google gagal. Coba lagi.'),
-    flow: 'implicit',   // gunakan popup flow, bukan redirect
+    flow: 'implicit',
   })
 
   return (
-    <button
-      type="button"
-      onClick={() => login()}
-      disabled={loading}
-      className="w-full flex items-center justify-center gap-3 border border-stone-200 bg-white
-                 rounded px-4 py-2.5 text-sm text-stone-700 font-medium
-                 hover:bg-stone-50 hover:border-stone-300 transition-all duration-150
-                 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {loading ? (
-        <Spinner size={16} className="text-stone-400" />
-      ) : (
-        <GoogleIcon />
+    <>
+      <button
+        type="button"
+        onClick={() => googleLogin()}
+        disabled={loading}
+        className="w-full flex items-center justify-center gap-3 border border-stone-200 bg-white
+                   rounded px-4 py-2.5 text-sm text-stone-700 font-medium
+                   hover:bg-stone-50 hover:border-stone-300 transition-all duration-150
+                   disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? (
+          <Spinner size={16} className="text-stone-400" />
+        ) : (
+          <GoogleIcon />
+        )}
+        {loading ? 'Menghubungkan...' : label}
+      </button>
+
+      {/* Modal complete profile untuk user baru Google */}
+      {pendingData && (
+        <CompleteProfileModal
+          user={pendingData.user}
+          onComplete={handleProfileComplete}
+        />
       )}
-      {loading ? 'Menghubungkan...' : label}
-    </button>
+    </>
   )
 }
 

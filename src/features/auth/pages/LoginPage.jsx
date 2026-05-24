@@ -8,18 +8,23 @@ import Spinner from '../../../components/ui/Spinner'
 import GoogleAuthButton from '../../../components/ui/GoogleAuthButton'
 
 export default function LoginPage() {
-  const navigate = useNavigate()
-  const setAuth  = useAuthStore((s) => s.setAuth)
-  const [form, setForm]     = useState({ identifier: '', password: '' })
+  const navigate  = useNavigate()
+  const setAuth   = useAuthStore((s) => s.setAuth)
+  const [form, setForm]       = useState({ identifier: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [showPass, setShowPass] = useState(false)
+  const [error, setError]     = useState('')
 
-  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }))
+  const set = (k) => (e) => {
+    setError('')
+    setForm((p) => ({ ...p, [k]: e.target.value }))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
     if (!form.identifier.trim() || !form.password.trim()) {
-      return toast.error('Email/telepon dan password wajib diisi.')
+      return setError('Email/telepon dan password wajib diisi.')
     }
     setLoading(true)
     try {
@@ -29,7 +34,7 @@ export default function LoginPage() {
       toast.success(`Selamat datang, ${user.name}.`)
       navigate(user.role === 'admin' ? '/admin/dashboard' : '/dashboard')
     } catch (err) {
-      toast.error(getErrorMsg(err))
+      setError(getErrorMsg(err))
     } finally {
       setLoading(false)
     }
@@ -50,11 +55,21 @@ export default function LoginPage() {
           <div className="flex-1 h-px bg-stone-200" />
         </div>
 
+        {/* Inline error alert */}
+        {error && (
+          <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-md px-3.5 py-3 mb-4 text-sm">
+            <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{error}</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="form-group">
             <label className="label">Email / Nomor Telepon</label>
             <input
-              className="input"
+              className={`input ${error ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : ''}`}
               placeholder="email@contoh.com atau 08xxxxxxxxxx"
               value={form.identifier}
               onChange={set('identifier')}
@@ -67,7 +82,7 @@ export default function LoginPage() {
             <label className="label">Password</label>
             <div className="relative">
               <input
-                className="input pr-10"
+                className={`input pr-10 ${error ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : ''}`}
                 type={showPass ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={form.password}
