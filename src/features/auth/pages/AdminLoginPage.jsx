@@ -51,7 +51,7 @@ export default function AdminLoginPage() {
             </svg>
           </div>
           <h1 className="font-display text-2xl text-ink">Admin Panel</h1>
-          <p className="text-stone-500 text-sm mt-1">Perpustakaan — Sistem Kehadiran</p>
+          <p className="text-stone-500 text-sm mt-1">Arisza Library Attendance</p>
         </div>
 
         <div className="card">
@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
                 <label className="label">Email / Nomor Telepon</label>
                 <input
                   className={`input ${error ? 'border-red-300' : ''}`}
-                  placeholder="admin@library.app"
+                  placeholder="email admin atau nomor telepon"
                   value={form.identifier}
                   onChange={set('identifier')}
                   required
@@ -83,7 +83,6 @@ export default function AdminLoginPage() {
                   <input
                     className={`input pr-10 ${error ? 'border-red-300' : ''}`}
                     type={showPass ? 'text' : 'password'}
-                    placeholder="••••••••"
                     value={form.password}
                     onChange={set('password')}
                     required

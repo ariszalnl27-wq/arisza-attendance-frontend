@@ -44,7 +44,7 @@ export default function LoginPage() {
     <AuthShell>
       <div className="fade-in">
         <h1 className="font-display text-2xl text-ink mb-1">Masuk</h1>
-        <p className="text-stone-500 text-sm mb-7">Sistem kehadiran pengunjung perpustakaan</p>
+        <p className="text-stone-500 text-sm mb-7">Sistem absensi pengunjung</p>
 
         {/* Google login */}
         <GoogleAuthButton label="Masuk dengan Google" />
@@ -70,7 +70,7 @@ export default function LoginPage() {
             <label className="label">Email / Nomor Telepon</label>
             <input
               className={`input ${error ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : ''}`}
-              placeholder="email@contoh.com atau 08xxxxxxxxxx"
+              placeholder="arisza@example.com"
               value={form.identifier}
               onChange={set('identifier')}
               autoComplete="username"
@@ -84,7 +84,6 @@ export default function LoginPage() {
               <input
                 className={`input pr-10 ${error ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : ''}`}
                 type={showPass ? 'text' : 'password'}
-                placeholder="••••••••"
                 value={form.password}
                 onChange={set('password')}
                 autoComplete="current-password"
@@ -126,15 +125,8 @@ export function AuthShell({ children }) {
     <div className="min-h-dvh flex">
       <div className="hidden lg:flex lg:w-2/5 xl:w-1/2 bg-ink flex-col justify-between p-12">
         <div>
-          <p className="font-display text-parchment text-xl">Perpustakaan</p>
-          <p className="text-stone-500 text-xs mt-1 font-mono tracking-wider">SISTEM MANAJEMEN KEHADIRAN</p>
-        </div>
-        <div className="space-y-6">
-          <div className="h-px bg-white/10" />
-          <blockquote className="font-display text-stone-300 text-lg leading-relaxed italic">
-            "Perpustakaan adalah tempat di mana pikiran bebas bertumbuh."
-          </blockquote>
-          <p className="text-stone-600 text-xs">— Sistem pencatatan kunjungan otomatis</p>
+          <p className="font-display text-parchment text-xl">Arisza Library Attendance</p>
+          <p className="text-stone-500 text-xs mt-1 font-mono tracking-wider">Sistem Absensi Pengunjung</p>
         </div>
         <div className="grid grid-cols-3 gap-3">
           {['Absensi QR', 'Poin Reward', 'Laporan'].map((f) => (

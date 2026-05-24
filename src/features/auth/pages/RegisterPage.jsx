@@ -71,13 +71,13 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
           <div className="form-group">
-            <label className="label">Nama Lengkap</label>
-            <input className="input" placeholder="Budi Santoso" value={form.name} onChange={set('name')} required />
+            <label className="label">Nama</label>
+            <input className="input" placeholder="Arisza Library" value={form.name} onChange={set('name')} required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="form-group">
               <label className="label">Email</label>
-              <input className="input" type="email" placeholder="budi@email.com" value={form.email} onChange={set('email')} required />
+              <input className="input" type="email" placeholder="arisza@example.com" value={form.email} onChange={set('email')} required />
             </div>
             <div className="form-group">
               <label className="label">No. Telepon</label>
@@ -86,7 +86,7 @@ export default function RegisterPage() {
           </div>
           <div className="form-group">
             <label className="label">Instansi <span className="text-stone-400 font-normal">(opsional)</span></label>
-            <input className="input" placeholder="Universitas / Sekolah / dll" value={form.institution} onChange={set('institution')} />
+            <input className="input" placeholder="Universitas / Sekolah / Umum / dll" value={form.institution} onChange={set('institution')} />
           </div>
           <div className="form-group">
             <label className="label">Password</label>
