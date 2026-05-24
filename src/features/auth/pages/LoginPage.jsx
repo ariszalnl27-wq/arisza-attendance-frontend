@@ -47,7 +47,7 @@ export default function LoginPage() {
         <p className="text-stone-500 text-sm mb-7">Sistem absensi pengunjung</p>
 
         {/* Google login */}
-        <GoogleAuthButton label="Masuk dengan Google" />
+        <GoogleAuthButton label="Masuk dengan Google" mode="login" />
 
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 h-px bg-stone-200" />

@@ -8,9 +8,11 @@ import EmptyState from '../../../components/ui/EmptyState'
 import Modal from '../../../components/ui/Modal'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 
+const MIN_POINTS = 5
+
 const REDEEM_STEPS = [
-  { num: '01', title: 'Kumpulkan 10 Poin', desc: 'Setiap kunjungan yang selesai (check-in + checkout dalam satu hari) memberikan 1 poin.' },
-  { num: '02', title: 'Ajukan Penukaran', desc: 'Klik tombol "Tukar 10 Poin" di halaman ini. 10 poin akan dipotong dari total poin Anda.' },
+  { num: '01', title: `Kumpulkan ${MIN_POINTS} Poin`, desc: `Setiap kunjungan yang selesai (check-in + checkout dalam satu hari) memberikan 1 poin.` },
+  { num: '02', title: 'Ajukan Penukaran', desc: `Klik tombol "Tukar ${MIN_POINTS} Poin" di halaman ini. ${MIN_POINTS} poin akan dipotong dari total poin Anda.` },
   { num: '03', title: 'Tunggu Persetujuan Admin', desc: 'Admin perpustakaan akan memproses pengajuan Anda. Anda akan menerima notifikasi email.' },
   { num: '04', title: 'Ambil Hadiah', desc: 'Jika disetujui, datang ke loket perpustakaan dan tunjukkan notifikasi email persetujuan Anda.' },
 ]
@@ -51,8 +53,8 @@ export default function PointsPage() {
 
   if (loading) return <div className="flex justify-center py-20"><Spinner size={24} className="text-stone-400" /></div>
 
-  const currentPct = points ? Math.min(((points.total_points % 10) / 10) * 100, 100) : 0
-  const vouchers   = points ? Math.floor(points.total_points / 10) : 0
+  const currentPct = points ? Math.min(((points.total_points % MIN_POINTS) / MIN_POINTS) * 100, 100) : 0
+  const vouchers   = points ? Math.floor(points.total_points / MIN_POINTS) : 0
 
   return (
     <div className="fade-in space-y-6">
@@ -76,11 +78,11 @@ export default function PointsPage() {
                   onClick={() => setConfirmOpen(true)}
                   disabled={!!points.pending_redemptions}
                 >
-                  Tukar 10 Poin
+                  Tukar {MIN_POINTS} Poin
                 </button>
               ) : (
                 <p className="text-sm text-stone-400">
-                  Butuh <span className="font-medium text-ink">{points?.points_needed ?? 10}</span> poin lagi
+                  Butuh <span className="font-medium text-ink">{points?.points_needed ?? MIN_POINTS}</span> poin lagi
                 </p>
               )}
               <button
@@ -96,7 +98,7 @@ export default function PointsPage() {
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs text-stone-400">
               <span>Progress menuju hadiah berikutnya</span>
-              <span>{points?.total_points % 10} / 10 poin</span>
+              <span>{points?.total_points % MIN_POINTS} / {MIN_POINTS} poin</span>
             </div>
             <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
               <div
@@ -164,7 +166,7 @@ export default function PointsPage() {
         onConfirm={handleRedeem}
         loading={redeemLoading}
         title="Tukar Poin"
-        message="Anda akan menukar 10 poin untuk 1 hadiah. Pengajuan akan diproses oleh admin perpustakaan. Lanjutkan?"
+        message={`Anda akan menukar ${MIN_POINTS} poin untuk 1 hadiah. Pengajuan akan diproses oleh admin perpustakaan. Lanjutkan?`}
         confirmLabel="Ya, Ajukan Sekarang"
         variant="accent"
       />
@@ -193,7 +195,7 @@ export default function PointsPage() {
           <div className="bg-parchment border border-stone-200 rounded p-4">
             <p className="text-xs font-medium text-ink mb-1">Catatan penting</p>
             <ul className="text-xs text-stone-500 space-y-1">
-              <li>• 1 penukaran = 10 poin = 1 hadiah</li>
+              <li>• 1 penukaran = {MIN_POINTS} poin = 1 hadiah</li>
               <li>• Poin dikurangi saat pengajuan, bukan saat disetujui</li>
               <li>• Jika ditolak, poin Anda akan dikembalikan otomatis</li>
               <li>• Hanya 1 pengajuan yang bisa diproses dalam satu waktu</li>

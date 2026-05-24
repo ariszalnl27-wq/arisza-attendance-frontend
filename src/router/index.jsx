@@ -7,6 +7,7 @@ import RegisterPage from '../features/auth/pages/RegisterPage'
 import ForgotPasswordPage from '../features/auth/pages/ForgotPasswordPage'
 import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage'
 import AdminLoginPage from '../features/auth/pages/AdminLoginPage'
+import CompleteProfilePage from '../features/auth/pages/CompleteProfilePage'
 
 // User pages
 import DashboardPage from '../features/user/pages/DashboardPage'
@@ -29,7 +30,10 @@ import AdminLayout from '../components/layouts/AdminLayout'
 function RequireAuth({ children }) {
   const { accessToken, user } = useAuthStore()
   if (!accessToken) return <Navigate to="/login" replace />
-  if (user?.role === 'admin') return <Navigate to="/admin/dashboard" replace />
+  // Admin jangan masuk ke route user kecuali complete-profile
+  if (user?.role === 'admin' && window.location.pathname !== '/complete-profile') {
+    return <Navigate to="/admin/dashboard" replace />
+  }
   return children
 }
 
@@ -58,6 +62,9 @@ export default function AppRouter() {
       <Route path="/forgot-password" element={<GuestOnly><ForgotPasswordPage /></GuestOnly>} />
       <Route path="/reset-password" element={<GuestOnly><ResetPasswordPage /></GuestOnly>} />
       <Route path="/admin/login" element={<GuestOnly><AdminLoginPage /></GuestOnly>} />
+
+      {/* Lengkapi profil setelah register Google — butuh auth, tapi bukan GuestOnly */}
+      <Route path="/complete-profile" element={<RequireAuth><CompleteProfilePage /></RequireAuth>} />
 
       {/* User routes */}
       <Route path="/dashboard" element={<RequireAuth><UserLayout><DashboardPage /></UserLayout></RequireAuth>} />

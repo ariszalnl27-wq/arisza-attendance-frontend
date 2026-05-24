@@ -2,6 +2,7 @@ import api from '../../../lib/axios'
 
 export const getDashboard     = ()           => api.get('/admin/dashboard')
 export const getQRCodes       = ()           => api.get('/admin/qr')
+export const generateToken    = (type)       => api.post('/admin/qr/generate-token', { type })
 
 // Users
 export const getUsers         = (params)     => api.get('/admin/users', { params })

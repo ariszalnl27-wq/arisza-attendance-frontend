@@ -1,20 +1,30 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 
+/**
+ * Modal yang benar-benar menutupi seluruh viewport.
+ * - Backdrop: fixed inset-0 — tidak ada celah di mana pun
+ * - Scrollbar compensation: padding-right agar tidak ada layout shift
+ * - Panel: scroll internal agar konten panjang tetap accessible
+ */
 export default function Modal({ open, onClose, title, children, size = 'md' }) {
+  const panelRef = useRef(null)
+
   const handleKey = useCallback((e) => {
     if (e.key === 'Escape') onClose()
   }, [onClose])
 
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden'
-      document.addEventListener('keydown', handleKey)
-    } else {
-      document.body.style.overflow = ''
-      document.removeEventListener('keydown', handleKey)
-    }
+    if (!open) return
+
+    // Hitung lebar scrollbar agar layout tidak bergeser saat overflow hidden
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+    document.body.style.overflow = 'hidden'
+    document.body.style.paddingRight = `${scrollbarWidth}px`
+    document.addEventListener('keydown', handleKey)
+
     return () => {
       document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
       document.removeEventListener('keydown', handleKey)
     }
   }, [open, handleKey])
@@ -24,39 +34,54 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
   const sizes = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-xl', xl: 'max-w-3xl' }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      {/* Backdrop */}
+    <>
+      {/* ── Backdrop: fixed inset-0 menutupi seluruh viewport termasuk scrollbar ── */}
       <div
-        className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]"
-        onClick={onClose}
+        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]"
         aria-hidden="true"
+        onClick={onClose}
       />
 
-      {/* Panel */}
-      <div className={`relative w-full ${sizes[size]} max-h-[90dvh] bg-white rounded-lg shadow-xl
-                       flex flex-col fade-in border border-stone-200`}>
-        {/* Header */}
-        {title && (
-          <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 flex-shrink-0">
-            <h2 className="font-display text-base font-medium text-ink">{title}</h2>
-            <button
-              onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center rounded text-stone-400
-                         hover:text-ink hover:bg-stone-100 transition-colors"
-              aria-label="Tutup"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        )}
+      {/* ── Centering wrapper: fixed inset-0, scroll jika konten lebih tinggi dari layar ── */}
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Panel */}
+        <div
+          ref={panelRef}
+          className={`
+            relative w-full ${sizes[size]} my-auto
+            bg-white rounded-lg shadow-2xl border border-stone-200
+            flex flex-col max-h-[90dvh]
+            animate-in fade-in zoom-in-95 duration-150
+          `}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          {title && (
+            <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 flex-shrink-0">
+              <h2 className="font-display text-base font-medium text-ink">{title}</h2>
+              <button
+                onClick={onClose}
+                className="w-7 h-7 flex items-center justify-center rounded text-stone-400
+                           hover:text-ink hover:bg-stone-100 transition-colors"
+                aria-label="Tutup"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
 
-        {/* Scrollable body */}
-        <div className="overflow-y-auto flex-1 px-5 py-5">
-          {children}
+          {/* Scrollable body */}
+          <div className="overflow-y-auto flex-1 px-5 py-5">
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

@@ -1,62 +1,61 @@
 import { useState } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
-import { googleAuth } from '../../features/auth/api/authApi'
+import { googleLogin, googleRegister } from '../../features/auth/api/authApi'
 import { useAuthStore } from '../../store/authStore'
 import { getErrorMsg } from '../../lib/utils'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import Spinner from './Spinner'
-import CompleteProfileModal from './CompleteProfileModal'
 
-export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google' }) {
+/**
+ * mode="login"    → hanya login akun terdaftar, error jika belum daftar
+ * mode="register" → hanya register akun baru, lalu redirect ke /complete-profile
+ */
+export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google', mode = 'login' }) {
   const navigate  = useNavigate()
   const setAuth   = useAuthStore((s) => s.setAuth)
   const [loading, setLoading] = useState(false)
-
-  // State untuk modal complete profile (user baru via Google)
-  const [pendingData, setPendingData] = useState(null)
-  // pendingData = { user, accessToken, refreshToken }
+  const [error, setError]     = useState('')
 
   const handleSuccess = async (tokenResponse) => {
     setLoading(true)
+    setError('')
     try {
-      const res = await googleAuth(tokenResponse.access_token)
-      const { user, accessToken, refreshToken, isNewUser } = res.data.data
-
-      if (isNewUser) {
-        // Simpan token dulu di store agar updateProfile bisa request authenticated
-        setAuth(user, accessToken, refreshToken)
-        // Tampilkan modal kelengkapan profil
-        setPendingData({ user, accessToken, refreshToken })
-      } else {
+      if (mode === 'login') {
+        // ── LOGIN: hanya akun yang sudah terdaftar ──────────────────
+        const res = await googleLogin(tokenResponse.access_token)
+        const { user, accessToken, refreshToken } = res.data.data
         setAuth(user, accessToken, refreshToken)
         toast.success(`Selamat datang, ${user.name}.`)
         navigate(user.role === 'admin' ? '/admin/dashboard' : '/dashboard')
+      } else {
+        // ── REGISTER: buat akun baru lalu lengkapi profil ───────────
+        const res = await googleRegister(tokenResponse.access_token)
+        const { user, accessToken, refreshToken } = res.data.data
+        // Simpan auth dulu agar halaman complete-profile bisa request authenticated
+        setAuth(user, accessToken, refreshToken)
+        toast.success('Akun berhasil dibuat! Lengkapi profil Anda.')
+        navigate('/complete-profile')
       }
     } catch (err) {
-      toast.error(getErrorMsg(err))
+      const msg = getErrorMsg(err)
+      setError(msg)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleProfileComplete = (updatedUser) => {
-    setPendingData(null)
-    toast.success(`Selamat datang, ${updatedUser.name}! Akun berhasil dibuat.`)
-    navigate('/dashboard')
-  }
-
-  const googleLogin = useGoogleLogin({
+  const googleLoginFlow = useGoogleLogin({
     onSuccess: handleSuccess,
-    onError: () => toast.error('Login Google gagal. Coba lagi.'),
+    onError: () => setError('Login Google gagal. Coba lagi.'),
     flow: 'implicit',
   })
 
   return (
-    <>
+    <div className="w-full">
       <button
         type="button"
-        onClick={() => googleLogin()}
+        onClick={() => { setError(''); googleLoginFlow() }}
         disabled={loading}
         className="w-full flex items-center justify-center gap-3 border border-stone-200 bg-white
                    rounded px-4 py-2.5 text-sm text-stone-700 font-medium
@@ -71,14 +70,16 @@ export default function GoogleAuthButton({ label = 'Lanjutkan dengan Google' }) 
         {loading ? 'Menghubungkan...' : label}
       </button>
 
-      {/* Modal complete profile untuk user baru Google */}
-      {pendingData && (
-        <CompleteProfileModal
-          user={pendingData.user}
-          onComplete={handleProfileComplete}
-        />
+      {/* Inline error khusus Google (mis. belum terdaftar) */}
+      {error && (
+        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-md px-3.5 py-3 mt-3 text-sm">
+          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{error}</span>
+        </div>
       )}
-    </>
+    </div>
   )
 }
 

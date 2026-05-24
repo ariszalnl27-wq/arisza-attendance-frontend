@@ -51,7 +51,7 @@ export default function RegisterPage() {
         <p className="text-stone-500 text-sm mb-6">Buat akun pengunjung perpustakaan</p>
 
         {/* Google register */}
-        <GoogleAuthButton label="Daftar dengan Google" />
+        <GoogleAuthButton label="Daftar dengan Google" mode="register" />
 
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 h-px bg-stone-200" />
