@@ -91,7 +91,7 @@ export default function UserLayout({ children }) {
           <button className="p-1.5 rounded hover:bg-stone-100" onClick={() => setOpen(true)}>
             <MenuIcon className="w-5 h-5 text-stone-600" />
           </button>
-          <p className="font-display text-ink text-base">Perpustakaan</p>
+          <p className="font-display text-ink text-base">Dashboard Pengunjung</p>
         </header>
 
         <main className="flex-1 p-5 lg:p-8 max-w-5xl w-full mx-auto">

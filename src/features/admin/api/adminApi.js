@@ -10,8 +10,8 @@ export const getUserById      = (id)         => api.get(`/admin/users/${id}`)
 export const updateUser       = (id, data)   => api.put(`/admin/users/${id}`, data)
 export const deactivateUser   = (id)         => api.delete(`/admin/users/${id}`)
 export const createAdmin      = (data)       => api.post('/admin/create-admin', data)
-export const exportUsers      = ()           =>
-  api.get('/admin/users/export', { responseType: 'blob' })
+export const exportUsers      = (minThreshold = false) =>
+  api.get('/admin/users/export', { params: { min_threshold: minThreshold }, responseType: 'blob' })
 
 // Attendances
 export const getAttendances   = (params)     => api.get('/admin/attendances', { params })

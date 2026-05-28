@@ -9,26 +9,27 @@ import Modal from '../../../components/ui/Modal'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 
 export default function AdminUsersPage() {
-  const [users,           setUsers]           = useState([])
-  const [pagination,      setPagination]      = useState({ page: 1, totalPages: 1 })
-  const [search,          setSearch]          = useState('')
-  const [loading,         setLoading]         = useState(true)
-  const [detail,          setDetail]          = useState(null)
-  const [detailLoading,   setDetailLoading]   = useState(false)
-  const [editForm,        setEditForm]        = useState({})
-  const [editLoading,     setEditLoading]     = useState(false)
-  const [deactivateTarget,setDeactivateTarget]= useState(null)
-  const [deactivateLoading,setDeactivateLoading]=useState(false)
-  const [createAdminModal,setCreateAdminModal]= useState(false)
-  const [adminForm,       setAdminForm]       = useState({ name: '', email: '', phone: '', password: '' })
-  const [adminLoading,    setAdminLoading]    = useState(false)
-  const [exportLoading,   setExportLoading]   = useState(false)
-  const [detailTab,       setDetailTab]       = useState('info')
+  const [users,            setUsers]            = useState([])
+  const [pagination,       setPagination]       = useState({ page: 1, totalPages: 1 })
+  const [search,           setSearch]           = useState('')
+  const [minThreshold,     setMinThreshold]     = useState(false)
+  const [loading,          setLoading]          = useState(true)
+  const [detail,           setDetail]           = useState(null)
+  const [detailLoading,    setDetailLoading]    = useState(false)
+  const [editForm,         setEditForm]         = useState({})
+  const [editLoading,      setEditLoading]      = useState(false)
+  const [deactivateTarget, setDeactivateTarget] = useState(null)
+  const [deactivateLoading,setDeactivateLoading]= useState(false)
+  const [createAdminModal, setCreateAdminModal] = useState(false)
+  const [adminForm,        setAdminForm]        = useState({ name: '', email: '', phone: '', password: '' })
+  const [adminLoading,     setAdminLoading]     = useState(false)
+  const [exportLoading,    setExportLoading]    = useState(false)
+  const [detailTab,        setDetailTab]        = useState('info')
 
   const fetchUsers = async (page = 1) => {
     setLoading(true)
     try {
-      const res = await getUsers({ page, limit: 15, search })
+      const res = await getUsers({ page, limit: 15, search, min_threshold: minThreshold })
       setUsers(res.data.data.users)
       setPagination({ page, totalPages: res.data.data.pagination.totalPages })
     } catch (err) { toastErr(err) }
@@ -38,7 +39,7 @@ export default function AdminUsersPage() {
   useEffect(() => {
     const t = setTimeout(() => fetchUsers(), 350)
     return () => clearTimeout(t)
-  }, [search])
+  }, [search, minThreshold])
 
   const openDetail = async (id) => {
     setDetailLoading(true)
@@ -88,14 +89,15 @@ export default function AdminUsersPage() {
     finally { setAdminLoading(false) }
   }
 
-  const handleExport = async () => {
+  const handleExport = async (withFilter) => {
     setExportLoading(true)
     try {
-      const res = await exportUsers()
+      const res = await exportUsers(withFilter)
       const url  = window.URL.createObjectURL(new Blob([res.data]))
       const link = document.createElement('a')
       link.href  = url
-      link.setAttribute('download', `data-pengunjung-${new Date().toISOString().split('T')[0]}.xlsx`)
+      const suffix = withFilter ? '-aktif' : '-semua'
+      link.setAttribute('download', `data-pengunjung${suffix}-${new Date().toISOString().split('T')[0]}.xlsx`)
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -107,27 +109,45 @@ export default function AdminUsersPage() {
 
   return (
     <div className="fade-in space-y-6">
+      {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="page-title">Pengguna</h1>
           <p className="page-subtitle">Kelola akun pengunjung dan administrator</p>
         </div>
-        <div className="flex gap-2">
-          <button className="btn btn-secondary btn-sm" onClick={handleExport} disabled={exportLoading}>
-            {exportLoading ? <Spinner size={14} /> : <ExportIcon className="w-4 h-4" />}
-            Ekspor Excel
-          </button>
+        <div className="flex gap-2 flex-wrap">
+          {/* Export dropdown */}
+          <ExportMenu onExportAll={() => handleExport(false)} onExportFiltered={() => handleExport(true)} loading={exportLoading} />
           <button className="btn btn-primary btn-sm" onClick={() => setCreateAdminModal(true)}>
             + Admin Baru
           </button>
         </div>
       </div>
 
-      {/* Search */}
+      {/* Filter bar */}
       <div className="card">
-        <div className="card-body">
-          <input className="input" placeholder="Cari nama, email, atau nomor telepon..."
-            value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div className="card-body flex flex-wrap gap-3 items-center">
+          <input
+            className="input flex-1 min-w-48"
+            placeholder="Cari nama, email, atau nomor telepon..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {/* Toggle filter threshold */}
+          <label className="flex items-center gap-2 cursor-pointer select-none flex-shrink-0">
+            <div
+              onClick={() => setMinThreshold(v => !v)}
+              className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${minThreshold ? 'bg-accent' : 'bg-stone-200'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${minThreshold ? 'translate-x-4' : ''}`} />
+            </div>
+            <span className="text-sm text-stone-600">
+              Poin &amp; kunjungan &ge;5
+            </span>
+          </label>
+          {minThreshold && (
+            <span className="badge badge-approved text-xs">Filter aktif</span>
+          )}
         </div>
       </div>
 
@@ -141,7 +161,17 @@ export default function AdminUsersPage() {
           <div className="table-wrapper">
             <table className="table">
               <thead>
-                <tr><th>Nama</th><th>Email</th><th>No. Telepon</th><th>Role</th><th>Poin</th><th>Kunjungan</th><th>Status</th><th>Aksi</th></tr>
+                <tr>
+                  <th>Nama</th>
+                  <th>Instansi</th>
+                  <th>Email</th>
+                  <th>No. Telepon</th>
+                  <th>Role</th>
+                  <th>Poin</th>
+                  <th>Kunjungan</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
               </thead>
               <tbody>
                 {users.map((u) => {
@@ -162,6 +192,9 @@ export default function AdminUsersPage() {
                             )}
                           </div>
                         </div>
+                      </td>
+                      <td className="text-xs text-stone-500 max-w-[120px]">
+                        <span className="truncate block" title={u.institution || ''}>{u.institution || '—'}</span>
                       </td>
                       <td className="text-xs text-stone-500">{u.email}</td>
                       <td className="text-xs font-mono text-stone-500">{u.phone || '—'}</td>
@@ -195,14 +228,14 @@ export default function AdminUsersPage() {
         </>
       )}
 
-      {/* ── Detail Modal ─────────────────────────────────────────── */}
+      {/* ── Detail Modal ────────────────────────────────── */}
       <Modal open={!!detail} onClose={() => setDetail(null)} title="Detail Pengguna" size="xl">
         {detailLoading ? (
           <div className="flex justify-center py-10"><Spinner size={22} className="text-stone-400" /></div>
         ) : detail && (
           <div className="space-y-5">
             {/* Photo + summary */}
-            <div className="flex items-center gap-4 pb-4 border-b border-stone-100">
+            <div className="flex items-center gap-4 pb-4 border-b border-stone-100 flex-wrap">
               <div className="w-14 h-14 rounded-full bg-stone-100 border border-stone-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
                 {resolvePhotoUrl(detail.user.photo_url)
                   ? <img src={resolvePhotoUrl(detail.user.photo_url)} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -211,12 +244,12 @@ export default function AdminUsersPage() {
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-ink">{detail.user.name}</p>
                 <p className="text-stone-500 text-sm">{detail.user.email}</p>
-                <p className="text-stone-400 text-xs mt-0.5">{detail.user.institution || 'Instansi tidak diisi'}</p>
+                <p className="text-stone-400 text-xs mt-0.5">{detail.user.institution || '—'}</p>
               </div>
               <div className="grid grid-cols-3 gap-3 text-center">
                 <StatChip label="Poin" value={detail.user.total_points} />
                 <StatChip label="Kunjungan" value={detail.user.total_visits} />
-                <StatChip label="Ditukar" value={detail.totalPointsRedeemed} />
+                <StatChip label="Ditukar" value={detail.totalPointsRedeemed ?? 0} />
               </div>
             </div>
 
@@ -231,7 +264,7 @@ export default function AdminUsersPage() {
               ))}
             </div>
 
-            {/* Tab: Info & Edit */}
+            {/* Tab: Info */}
             {detailTab === 'info' && (
               <form onSubmit={handleEdit} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
@@ -326,8 +359,8 @@ export default function AdminUsersPage() {
               <input className="input" type="email" value={adminForm.email} onChange={(e) => setAdminForm(p => ({ ...p, email: e.target.value }))} required />
             </div>
             <div className="form-group">
-              <label className="label">No. Telepon</label>
-              <input className="input" placeholder="Opsional" value={adminForm.phone} onChange={(e) => setAdminForm(p => ({ ...p, phone: e.target.value }))} />
+              <label className="label">No. Telepon <span className="text-stone-400">(opsional)</span></label>
+              <input className="input" placeholder="08xxxxxxxxxx" value={adminForm.phone} onChange={(e) => setAdminForm(p => ({ ...p, phone: e.target.value }))} />
             </div>
           </div>
           <div className="form-group">
@@ -342,6 +375,49 @@ export default function AdminUsersPage() {
           </div>
         </form>
       </Modal>
+    </div>
+  )
+}
+
+/* ── Export dropdown ───────────────────────────────────────── */
+function ExportMenu({ onExportAll, onExportFiltered, loading }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="relative">
+      <button
+        className="btn btn-secondary btn-sm flex items-center gap-1.5"
+        onClick={() => setOpen(v => !v)}
+        disabled={loading}
+      >
+        {loading ? <Spinner size={14} /> : <ExportIcon className="w-4 h-4" />}
+        Ekspor Excel
+        <svg className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-stone-200 rounded-md shadow-card-hover z-20 overflow-hidden">
+            <button
+              className="w-full text-left px-4 py-3 text-sm text-stone-700 hover:bg-stone-50 transition-colors border-b border-stone-100"
+              onClick={() => { onExportAll(); setOpen(false) }}
+            >
+              <p className="font-medium">Semua Pengunjung</p>
+              <p className="text-xs text-stone-400 mt-0.5">Ekspor seluruh data</p>
+            </button>
+            <button
+              className="w-full text-left px-4 py-3 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
+              onClick={() => { onExportFiltered(); setOpen(false) }}
+            >
+              <p className="font-medium">Poin &amp; Kunjungan &ge;5</p>
+              <p className="text-xs text-stone-400 mt-0.5">Hanya pengunjung aktif</p>
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
